@@ -9,7 +9,6 @@ import {HttpClient} from "@angular/common/http";
 
 export class ChatService {
   constructor(private http: HttpClient) {
-    // TODO: Relay to the API and poll for messages.
   }
 
   private messages: Message[] = [

@@ -1,12 +1,17 @@
 import {Injectable} from '@angular/core';
 import {Observable, of} from "rxjs";
 import {Message} from "../interfaces/message";
+import {HttpClient} from "@angular/common/http";
 
 @Injectable({
   providedIn: 'root'
 })
 
 export class ChatService {
+  constructor(private http: HttpClient) {
+    // TODO: Relay to the API and poll for messages.
+  }
+
   private messages: Message[] = [
   ];
 
@@ -16,8 +21,7 @@ export class ChatService {
 
   sendMessage(text: string): void {
     this.messages.push({sender: 'You', text: text});
-    let response = this.getResponse(text);
-    this.messages.push(response);
+    this.messages.push(this.getResponse(text));
   }
 
   getResponse(text: string): Message {

@@ -26,4 +26,7 @@ export class ChatCardComponent implements OnInit {
     this.messageInput = '';
   }
 
+  Clear() {
+    this.messages = [];
+  }
 }

@@ -20,10 +20,10 @@ export class ChatService {
 
   sendMessage(text: string): void {
     this.messages.push({sender: 'You', text: text});
-    this.messages.push(this.getResponse(text));
-  }
-
-  getResponse(text: string): Message {
-    return {sender: 'InContext Bot GPT2', text: "404 Bad API. An internal server error has occurred or something. See the dumping ground called App Insights for more details."};
+    this.http.get(`/Chat`)
+        .subscribe((response: Message) => {
+            this.messages.push(response);
+        });
+        return;
   }
 }

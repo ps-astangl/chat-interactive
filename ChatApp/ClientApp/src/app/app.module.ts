@@ -15,6 +15,7 @@ import {MatLineModule} from "@angular/material/core";
 import {FormsModule} from "@angular/forms";
 import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
 import {HttpClientModule} from "@angular/common/http";
+import {ChatService} from "./services/chat-service.service";
 
 @NgModule({
   declarations: [
@@ -36,7 +37,7 @@ import {HttpClientModule} from "@angular/common/http";
     MatLineModule,
     FormsModule
   ],
-  providers: [],
+  providers: [ChatService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

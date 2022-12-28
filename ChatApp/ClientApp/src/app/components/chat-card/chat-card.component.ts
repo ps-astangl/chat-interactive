@@ -6,7 +6,7 @@ import {ChatService} from "../../services/chat-service.service";
   selector: 'app-chat-card',
   templateUrl: './chat-card.component.html'
 })
-export class ChatCardComponent implements OnInit,AfterViewChecked {
+export class ChatCardComponent implements OnInit, AfterViewChecked {
   @ViewChild('scrollMe') private myScrollContainer: ElementRef;
   messages: Message[] = [];
   messageInput: string = '';
@@ -14,23 +14,23 @@ export class ChatCardComponent implements OnInit,AfterViewChecked {
   constructor(private chatService: ChatService) {}
 
   ngOnInit() {
-    this.chatService.getMessages()
-      .subscribe((x) => {
-      this.messages = x;
+    this.chatService.retrieveMappedObject().subscribe((receivedObj: Message) => {
+      // calls the service method to get the new messages sent
+      this.messages.push(receivedObj);
     });
-    this.scrollToBottom();
   }
 
-  sendMessage() {
-    this.chatService.sendMessage(this.messageInput);
-    this.messageInput = '';
-    this.scrollToBottom();
-  }
+  send(): void {
+      // Send the message via a service
+      this.messages.push({sender: "Me", text: this.messageInput })
+      this.chatService.invokeServerMethod({ sender: "Me", text: this.messageInput });
+      this.messageInput = '';
+      this.scrollToBottom();
+    }
 
   Clear() {
     this.messages = [];
   }
-
 
   ngAfterViewChecked() {
     this.scrollToBottom();

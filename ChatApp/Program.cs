@@ -1,12 +1,16 @@
 using Microsoft.AspNetCore.SpaServices.AngularCli;
 using System.Text.Json.Serialization;
 using ChatApp.Extensions;
+using ChatApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.BuildConfiguration(builder.Environment);
 
 builder.Services.AddQueueClient(builder.Configuration);
+
+builder.Services.AddSignalR(x => builder.Configuration.GetSection("UploadStatusHubOptions").Bind(x));
+
 
 builder.Services
     .AddMvc(opt => opt.EnableEndpointRouting = false);
@@ -67,6 +71,7 @@ app.UseEndpoints(endpoints =>
     endpoints.MapControllerRoute(
         name: "default",
         pattern: "{controller}/{action=Index}/{id?}");
+    endpoints.MapHub<ChatHub>("/hub");
 });
 
 app.UseSpa(spa =>

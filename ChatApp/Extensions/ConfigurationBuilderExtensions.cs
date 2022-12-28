@@ -21,8 +21,7 @@ public static class ConfigurationBuilderExtensions
     public static void AddQueueClient(this IServiceCollection serviceCollection, IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("AzureStorage");
-        QueueClient queueClient = new QueueClient(connectionString, configuration.GetValue<string>("QueueName"));
-        queueClient.CreateIfNotExists();
+        QueueServiceClient queueClient = new QueueServiceClient(connectionString);
         serviceCollection.AddSingleton(queueClient);
     }
 }

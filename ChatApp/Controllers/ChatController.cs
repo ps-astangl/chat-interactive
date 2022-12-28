@@ -1,4 +1,5 @@
-﻿using Azure.Storage.Queues;
+﻿using System.Text.Json;
+using Azure.Storage.Queues;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ChatApp.Controllers;
@@ -16,16 +17,41 @@ public class ChatController : ControllerBase
     }
 
     [HttpGet]
-    public dynamic? Get()
+    public dynamic? Get([FromServices] QueueServiceClient queueServiceClient, [FromQuery] string? message)
     {
-        var responses =  new dynamic[]
-        {
-            new { sender = "John", text = "Hello" },
-            new { sender = "Jane", text = "Hi" },
-            new { sender = "John", text = "How are you?" },
-            new { sender = "Jane", text = "I'm fine, thanks" },
-            new { sender = "John", text = "Good to hear" }
-        };
-        return responses.ElementAtOrDefault(Random.Shared.Next(responses.Length));
+        // Create temp queue -- Guid for job. Put in message
+        var jobId = Guid.NewGuid().ToString();
+        // queueServiceClient.CreateQueue(jobId);
+
+        // Let processing queue handle writing the response to the temp queue
+        var prompt = new { text = message, jobId = jobId };
+
+        // { "text": "Hello", "jobId": "1234", "sender": "ChatApp" }
+
+        QueueClient queueClient = queueServiceClient.GetQueueClient("dump");
+
+        queueClient.SendMessage(JsonSerializer.Serialize(prompt));
+
+        var foo = new { id = jobId };
+
+        return Ok(foo);
+    }
+
+    [HttpGet(("[action]"))]
+    public dynamic? HasResponse([FromServices] QueueServiceClient queueClient, [FromQuery] string id, [FromQuery] bool shouldDelete = false)
+    {
+        return new { text = "Hello", sender = "ChatApp"};
+        // var client = queueClient.GetQueueClient(id);
+        // var response = client.ReceiveMessage();
+        // // { "text": "Hello", "sender": "ChatApp" }
+        // if (response.Value != null)
+        // {
+        //     queueClient.DeleteQueue(id);
+        //     var result = JsonSerializer.Deserialize<dynamic>(response.Value.MessageText);
+        //     return result;
+        // }
+        // if (shouldDelete)
+        //     queueClient.DeleteQueue(id);
+        // return null;
     }
 }

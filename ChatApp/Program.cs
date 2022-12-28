@@ -6,6 +6,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.BuildConfiguration(builder.Environment);
 
+builder.Services.AddQueueClient(builder.Configuration);
+
 builder.Services
     .AddMvc(opt => opt.EnableEndpointRouting = false);
 

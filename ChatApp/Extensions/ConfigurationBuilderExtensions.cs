@@ -1,4 +1,6 @@
-﻿namespace ChatApp.Extensions;
+﻿using Azure.Storage.Queues;
+
+namespace ChatApp.Extensions;
 
 /// <summary>
 /// Extension methods for building configuration
@@ -14,5 +16,13 @@ public static class ConfigurationBuilderExtensions
     {
         config.SetBasePath(environment.ContentRootPath)
             .AddEnvironmentVariables();
+    }
+
+    public static void AddQueueClient(this IServiceCollection serviceCollection, IConfiguration configuration)
+    {
+        var connectionString = configuration.GetConnectionString("AzureStorage");
+        QueueClient queueClient = new QueueClient(connectionString, configuration.GetValue<string>("QueueName"));
+        queueClient.CreateIfNotExists();
+        serviceCollection.AddSingleton(queueClient);
     }
 }

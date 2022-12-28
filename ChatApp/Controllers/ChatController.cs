@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Azure.Storage.Queues;
+using Microsoft.AspNetCore.Mvc;
 
 namespace ChatApp.Controllers;
 

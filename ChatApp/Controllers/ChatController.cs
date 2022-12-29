@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using Azure.Storage.Queues;
+﻿using Azure.Storage.Queues;
 using ChatApp.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -10,7 +9,6 @@ namespace ChatApp.Controllers;
 [Route("[controller]")]
 public class ChatController : ControllerBase
 {
-
     private readonly ILogger<ChatController> _logger;
     private readonly IHubContext<ChatHub> _hubContext;
     private QueueServiceClient _queueServiceClient;
@@ -19,13 +17,5 @@ public class ChatController : ControllerBase
         _logger = logger;
         _queueServiceClient = queueServiceClient;
         _hubContext = hubContext;
-    }
-
-    [Route("send")]
-    [HttpPost]
-    public IActionResult SendRequest([FromBody] Message msg)
-    {
-        _hubContext.Clients.All.SendAsync("ReceiveOne", msg.sender, msg.text);
-        return Ok();
     }
 }

@@ -11,6 +11,7 @@ builder.Services.AddQueueClient(builder.Configuration);
 
 builder.Services.AddSignalR(x => builder.Configuration.GetSection("UploadStatusHubOptions").Bind(x));
 
+builder.Services.AddHostedService<ChatHubService>();
 
 builder.Services
     .AddMvc(opt => opt.EnableEndpointRouting = false);

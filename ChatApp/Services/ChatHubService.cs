@@ -44,6 +44,7 @@ namespace ChatApp.Services
             {
                 var outMessage = JsonConvert.DeserializeObject<Message>(text);
                 _hubContext.Clients.All.SendAsync("SendMessage", outMessage);
+                client.DeleteMessage(message?.Value?.MessageId ?? "", message?.Value?.PopReceipt ?? "");
             }
         }
 

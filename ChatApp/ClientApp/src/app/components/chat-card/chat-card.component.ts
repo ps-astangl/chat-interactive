@@ -15,16 +15,16 @@ export class ChatCardComponent implements OnInit, AfterViewChecked, OnDestroy {
     constructor(private chatService: ChatService) {
     }
 
-    ngOnInit() {
+    ngOnInit(): void {
         this.chatService.connect();
         this.poll();
     }
 
-    ngAfterViewChecked() {
+    ngAfterViewChecked(): void {
         this.scrollToBottom();
     }
 
-    ngOnDestroy() {
+    ngOnDestroy(): void {
         this.chatService.disconnect();
     }
 
@@ -39,9 +39,11 @@ export class ChatCardComponent implements OnInit, AfterViewChecked, OnDestroy {
 
         this.messages.push(message)
 
-        this.chatService.getConnection().send('ReceiveMessage', message).then(() => {});
+        this.chatService.getConnection().send('ReceiveMessage', message).then(() => {
+        });
 
         this.messageInput = '';
+
         this.scrollToBottom();
     }
 

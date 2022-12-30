@@ -1,7 +1,11 @@
 <mat-card>
     <div style="overflow: scroll;  overflow-y: hidden;  overflow-x: hidden; height: 600px;" #scrollMe [scrollTop]="scrollMe.scrollHeight">
         <mat-list>
-            <mat-list-item *ngFor="let message of messages"> {{message.sender}}: {{message.text}} </mat-list-item>
+            <mat-list-item style="height:auto; width: 1200px" *ngFor="let message of messages">
+                <mat-card>
+                    <mat-card-content>{{message.sender}}: {{message.text}}</mat-card-content>
+                </mat-card>
+            </mat-list-item>
         </mat-list>
     </div>
     <mat-form-field>

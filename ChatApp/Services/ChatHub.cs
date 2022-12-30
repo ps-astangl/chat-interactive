@@ -1,5 +1,4 @@
 ﻿using Azure.Storage.Queues;
-using Azure.Storage.Queues.Models;
 using ChatApp.Controllers;
 using Microsoft.AspNetCore.SignalR;
 
@@ -14,7 +13,7 @@ namespace ChatApp.Services
     public class ChatHub : Hub<IChatHub>
     {
         private readonly ILogger<ChatHub> _logger;
-        private QueueServiceClient _queueServiceClient;
+        private readonly QueueServiceClient _queueServiceClient;
 
         /// <inheritdoc />
         public ChatHub(ILogger<ChatHub> logger, QueueServiceClient queueServiceClient)
@@ -23,22 +22,18 @@ namespace ChatApp.Services
             _queueServiceClient = queueServiceClient;
         }
 
-        public async Task SendMessage(Message message)
-        {
-            await Clients.All.SendMessage(message);
-        }
+        public async Task SendMessage(Message message) => await Clients.All.SendMessage(message);
 
         public async Task ReceiveMessage(Message message)
         {
             _logger.LogInformation("Received message from client");
-            var client = _queueServiceClient.GetQueueClient("output");
+            var client = _queueServiceClient.GetQueueClient("input");
             Message outMessage = new Message
             {
-                sender = "Bot",
-                text = "Hello from the other side!"
+                sender = message.sender,
+                text = message.text
             };
             await client.SendMessageAsync(new BinaryData(outMessage));
-            // await Clients.All.SendMessage(outMessage);
         }
     }
 }

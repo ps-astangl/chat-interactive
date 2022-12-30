@@ -71,7 +71,7 @@ def generate_response(input_prompt) -> str:
     }, use_cuda=False)
 
     subject = "What is the best way to use the InContext App?"
-    prompt = f"<|soss r/InContextApp|><|sot|>{subject}<|eot|><|sost|><|eost|><|sor u/Human|>{input_prompt}<|eor|><|sor|>"
+    prompt = f"<|soss r/InContext|><|sot|>{subject}<|eot|><|sost|><|eost|><|sor u/Human|>{input_prompt}<|eor|><|sor|>"
 
     reply = None
     refresh_args = {
@@ -104,7 +104,8 @@ if __name__ == '__main__':
         result = "..."
         try:
             result = generate_response(prompt)
-            result = result.replace("<|eoss|>", "")
+            result1 = result.replace("<|eoss|>", "")
+            result = re.sub('\\n', '  ', result1)
         except Exception as e:
             print(e)
             result = "I'm sorry, I Just Fucking Broke"

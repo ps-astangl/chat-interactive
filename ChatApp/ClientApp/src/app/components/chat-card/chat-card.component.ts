@@ -1,6 +1,21 @@
 import {AfterViewChecked, Component, ElementRef, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {Message} from "../../interfaces/message";
 import {ChatService} from "../../services/chat-service.service";
+import { Pipe, PipeTransform } from "@angular/core";
+import {marked} from "marked";
+
+
+@Pipe({
+    name: "marked"
+})
+export class MarkedPipe implements PipeTransform {
+    transform(value: any): any {
+        if (value && value.length > 0) {
+            return marked(value);
+        }
+        return value;
+    }
+}
 
 @Component({
     selector: 'app-chat-card',

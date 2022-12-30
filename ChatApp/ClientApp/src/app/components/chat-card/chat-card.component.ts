@@ -45,6 +45,7 @@ export class ChatCardComponent implements OnInit, AfterViewChecked, OnDestroy {
 
     poll(): void {
         this.chatService.getMessage((message: Message) => {
+            message.text = message.text.replace(/\\n/g, '\n');
             this.messages.push(message);
         });
     }

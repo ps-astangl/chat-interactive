@@ -10,8 +10,7 @@ import {Message} from "../interfaces/message";
 })
 export class ChatService {
     private message$: Subject<Message>;
-    private connection: signalR.HubConnection;
-
+    public connection: signalR.HubConnection;
     constructor() {
         this.message$ = new Subject<Message>();
         this.connection = new signalR.HubConnectionBuilder()
@@ -20,13 +19,13 @@ export class ChatService {
         this.connect();
     }
 
-    public connect() {
+    public connect(): void {
         if (this.connection.state === signalR.HubConnectionState.Disconnected) {
             this.connection.start()
                 .catch(err => console.log(err));
         }
     }
-    public disconnect() {
+    public disconnect(): void {
         this.connection.stop();
     }
 
@@ -34,5 +33,9 @@ export class ChatService {
         this.connection.on('SendMessage', (message: Message) => {
             next(message);
         });
+    }
+
+    public getConnection(): signalR.HubConnection  {
+        return this.connection;
     }
 }

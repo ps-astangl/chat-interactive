@@ -1,6 +1,9 @@
-﻿using Azure.Storage.Queues;
+﻿using Azure;
+using Azure.Storage.Queues;
+using Azure.Storage.Queues.Models;
 using ChatApp.Controllers;
 using Microsoft.AspNetCore.SignalR;
+using Newtonsoft.Json;
 
 namespace ChatApp.Services
 {
@@ -11,7 +14,8 @@ namespace ChatApp.Services
         private readonly IHubContext<ChatHub> _hubContext;
         private readonly QueueServiceClient _queueServiceClient;
 
-        public ChatHubService(ILogger<ChatHubService> logger, IHubContext<ChatHub> hubContext, QueueServiceClient queueServiceClient)
+        public ChatHubService(ILogger<ChatHubService> logger, IHubContext<ChatHub> hubContext,
+            QueueServiceClient queueServiceClient)
         {
             _logger = logger;
             _hubContext = hubContext;
@@ -21,26 +25,25 @@ namespace ChatApp.Services
         /// <inheritdoc />
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            _timer = new Timer(DoWork, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
+            _logger.LogInformation(":: ChatHubService is starting");
+            _timer = new Timer(MonitorMessages, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
             return Task.CompletedTask;
         }
 
-        private void DoWork(object? state)
+        private void MonitorMessages(object? state)
         {
             var client = _queueServiceClient.GetQueueClient("output");
-            var message = client.ReceiveMessage();
+            Response<QueueMessage> message = client.ReceiveMessage();
+
             if (message == null)
                 return;
 
-            var text = message.Value.MessageText;
+            var text = message?.Value?.MessageText;
+
             if (!string.IsNullOrEmpty(text))
             {
-                _hubContext.Clients.All.SendAsync("SendMessage",
-                    new Message
-                    {
-                        sender = "Bot",
-                        text = text
-                    });
+                var outMessage = JsonConvert.DeserializeObject<Message>(text);
+                _hubContext.Clients.All.SendAsync("SendMessage", outMessage);
             }
         }
 

@@ -3,40 +3,56 @@ import {Message} from "../../interfaces/message";
 import {ChatService} from "../../services/chat-service.service";
 
 @Component({
-  selector: 'app-chat-card',
-  templateUrl: './chat-card.component.html'
+    selector: 'app-chat-card',
+    templateUrl: './chat-card.component.html'
 })
 export class ChatCardComponent implements OnInit, AfterViewChecked, OnDestroy {
-  @ViewChild('scrollMe') private myScrollContainer: ElementRef;
-  private author: string = 'Me';
-  messages: Message[] = [];
-  messageInput: string = '';
+    @ViewChild('scrollMe') private myScrollContainer: ElementRef;
+    private author: string = 'Me';
+    messages: Message[] = [];
+    messageInput: string = '';
 
-  constructor(private chatService: ChatService) {}
-
-  ngOnInit() {
-    this.chatService.connect();
-  }
-
-  ngAfterViewChecked() {
-    this.scrollToBottom();
-  }
-
-  ngOnDestroy() {
-    this.chatService.disconnect();
-  }
-
-  send(): void {
-      this.messages.push({ sender: this.author, text: this.messageInput })
-      this.messageInput = '';
-      this.scrollToBottom();
-      this.chatService.getMessage((message: Message) => {
-          this.messages.push(message);
-      });
+    constructor(private chatService: ChatService) {
     }
-  scrollToBottom(): void {
-    try {
-      this.myScrollContainer.nativeElement.scrollTop = this.myScrollContainer.nativeElement.scrollHeight;
-    } catch(err) { }
-  }
+
+    ngOnInit() {
+        this.chatService.connect();
+        this.poll();
+    }
+
+    ngAfterViewChecked() {
+        this.scrollToBottom();
+    }
+
+    ngOnDestroy() {
+        this.chatService.disconnect();
+    }
+
+    poll(): void {
+        this.chatService.getMessage((message: Message) => {
+            this.messages.push(message);
+        });
+    }
+
+    send(): void {
+        let message = this.createMessage(this.author, this.messageInput);
+
+        this.messages.push(message)
+
+        this.chatService.getConnection().send('ReceiveMessage', message).then(() => {});
+
+        this.messageInput = '';
+        this.scrollToBottom();
+    }
+
+    createMessage(sender: string, text: string): Message {
+        return {sender: sender, text: text};
+    }
+
+    scrollToBottom(): void {
+        try {
+            this.myScrollContainer.nativeElement.scrollTop = this.myScrollContainer.nativeElement.scrollHeight;
+        } catch (err) {
+        }
+    }
 }

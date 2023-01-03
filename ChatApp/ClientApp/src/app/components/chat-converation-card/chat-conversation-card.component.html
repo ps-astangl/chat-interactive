@@ -1,0 +1,42 @@
+<mat-card class="example-card">
+    <mat-card-header>
+        <img mat-card-sm-image [src]=avatar class="avatar">
+        <mat-divider vertical="true"></mat-divider>
+        <mat-card-title-group class="example-spacer">
+            <mat-card-subtitle>{{message.sender}}</mat-card-subtitle>
+            <mat-card-subtitle>Topic: {{message.topic}}</mat-card-subtitle>
+            <mat-card-subtitle>Id: {{message.commentId}}</mat-card-subtitle>
+            <mat-card-subtitle>Time: {{now | date:'HH:mm'}}</mat-card-subtitle>
+        </mat-card-title-group>
+    </mat-card-header>
+    <mat-card-content *ngIf=isThinking>
+            {{this.message.sender + " is typing..."}}
+            <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    </mat-card-content>
+    <mat-card-content *ngIf="!isThinking">
+        <div [innerHTML]="message.text | marked"></div>
+    </mat-card-content>
+</mat-card>
+<style>
+    .example-card {
+        max-width: 600px;
+        margin-bottom: 8px;
+    }
+    .example-spacer {
+        margin-left: 8px;
+    }
+    .avatar {
+        vertical-align: middle;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+    }
+
+    .example-spacer {
+        flex: 1 1 auto;
+    }
+
+    .example-container mat-form-field + mat-form-field {
+        margin-left: 8px;
+    }
+</style>

@@ -1,16 +1,119 @@
-<mat-card>
-    <div style="overflow: scroll;  overflow-y: hidden;  overflow-x: hidden; height: 600px;" #scrollMe
-         [scrollTop]="scrollMe.scrollHeight">
-        <mat-list>
-            <ng-container style="height:auto; width: 1200px" *ngFor="let message of messages">
-                <mat-card style="max-width: 1200px;">
-                    <mat-card-content>{{message.sender}}:<div [innerHTML]="message.text | marked"></div></mat-card-content>
-                </mat-card>
+<script src="chat-card.component.ts"></script>
+<app-connection-indicator [connectionState]="this.connectionState"></app-connection-indicator>
+<!--TODO OPTIONS COMPONENT-->
+<mat-accordion>
+    <mat-expansion-panel [(expanded)]="panelOpenState" hideToggle="true">
+        <mat-expansion-panel-header>
+            <mat-panel-title>
+                <mat-icon>more_horizontal</mat-icon>
+                Options
+            </mat-panel-title>
+        </mat-expansion-panel-header>
+        <div class="example-form">
+            <mat-form-field class="example-full-width" appearance="fill">
+                <mat-label>UserName</mat-label>
+                <input matInput (input)="this.setUser($event)" [value]="this.user" required>
+                <mat-error *ngIf="this.checkUserForm()">User is required.</mat-error>
+            </mat-form-field>
+            <mat-form-field class=example-full-width appearance="fill">
+                <mat-label>Select A Bot</mat-label>
+                <mat-select (selectionChange)="this.setBot($event)" [(value)]="this.author">
+                    <mat-option *ngFor="let bot of bots" [value]="bot.botName">{{bot.botName}}</mat-option>
+                </mat-select>
+            </mat-form-field>
+            <mat-form-field class="example-full-width" appearance="fill">
+                <mat-label>Select a Topic</mat-label>
+                <input type="text"
+                       placeholder="Select Topic"
+                       aria-label="Text"
+                       matInput
+                       (select)="this.setTopic($event)"
+                       [(ngModel)]="this.topic"
+                       [matAutocomplete]="auto">
+                <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
+                    <mat-option *ngFor="let bot of bots" [value]="bot.topic">{{bot.topic}}</mat-option>
+                </mat-autocomplete>
+            </mat-form-field>
+            <mat-form-field class="example-full-width" appearance="fill">
+                <mat-label>Send Message to Bot?</mat-label>
+                <mat-select (selectionChange)="setAskBot($event)" [(value)]="this.askBot">
+                    <mat-option [value]="true">True</mat-option>
+                    <mat-option [value]="false">False</mat-option>
+                </mat-select>
+            </mat-form-field>
+            <mat-card-subtitle>
+                <mat-card-content class="example-spacer">
+                    <span>Chatting: {{this.author}}</span><br/>
+                    <span>Topic: {{this.topic}}</span>
+                </mat-card-content>
+            </mat-card-subtitle>
+        </div>
+        <mat-card>
+            <mat-button-toggle (click)="connect()" *ngIf="connectionState === 'Disconnected'">
+                Connect
+            </mat-button-toggle>
+            <mat-button-toggle (click)="disconnect()" *ngIf="connectionState === 'Connected'">Disconnect
+            </mat-button-toggle>
+        </mat-card>
+    </mat-expansion-panel>
+</mat-accordion>
+
+
+<!--Main Chat stuff-->
+<mat-card class="example-container">
+    <mat-list style="height: 500px; overflow-y:scroll">
+        <div class="example-container">
+            <ng-container *ngFor="let message of messages;" (change)="message.isThinking">
+                <mat-expansion-panel class="mat-elevation-z0">
+                    <mat-expansion-panel-header>
+                        <ng-template [ngIf]="this.message.isThinking">
+                            <mat-panel-title>
+                                <mat-icon>hourglass_empty</mat-icon>
+                                {{message.sender}}: ...
+                            </mat-panel-title>
+                        </ng-template>
+                        <ng-template [ngIf]="!this.message.isThinking">
+                            <mat-panel-title style="padding: 1px">
+                                <mat-icon>chat</mat-icon>
+                                {{message.sender}}:<div [innerHTML]="message.text.substring(0, 30) | marked"></div>
+                            </mat-panel-title>
+                        </ng-template>
+                    </mat-expansion-panel-header>
+                    <chat-conversation-card [isThinking]="message.isThinking" [message]="message"></chat-conversation-card>
+                </mat-expansion-panel>
             </ng-container>
-        </mat-list>
-    </div>
-    <mat-form-field>
-        <input matInput [(ngModel)]="messageInput" placeholder="Type your message here (and hit enter to send)"
-               (keydown.enter)="send()">
+        </div>
+    </mat-list>
+
+    <mat-form-field *ngIf="connectionState === 'Connected'">
+<textarea matInput [(ngModel)]="this.messageInput" placeholder="Type your message here (and hit enter to send)"
+          (keydown.enter)="send()"></textarea>
+        <button matButton matSuffix mat-stroked-button (click)="send()" style="border: none; justify-self: left">
+            <mat-icon>send</mat-icon>
+        </button>
     </mat-form-field>
 </mat-card>
+
+
+<style>
+    .example-container mat-form-field + mat-form-field {
+        margin-left: 8px;
+    }
+
+    .example-accordion-item + .example-accordion-item {
+        border-top: none;
+    }
+
+    .example-form {
+        margin-left: 15px;
+        margin-right: 15px;
+        border-top: none;
+        min-width: 150px;
+        max-width: 500px;
+        width: 100%;
+    }
+
+    .example-full-width {
+        width: 100%;
+    }
+</style>

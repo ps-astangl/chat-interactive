@@ -1,1 +1,4 @@
 /ChatApp/Properties/launchSettings.json
+/ChatApp/language-webjob/venv
+.idea/
+.idea/*

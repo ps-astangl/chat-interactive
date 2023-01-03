@@ -1,58 +1,106 @@
-﻿using Azure;
+﻿using System.Runtime.Serialization;
+using System.Security.Cryptography;
+using System.Text;
+using Azure;
 using Azure.Storage.Queues;
 using Azure.Storage.Queues.Models;
 using ChatApp.Controllers;
+using ChatApp.Models;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 
 namespace ChatApp.Services
 {
-    public class ChatHubService : IHostedService
+    public interface IChatHubService
     {
-        Timer? _timer;
-        private readonly ILogger<ChatHubService> _logger;
-        private readonly IHubContext<ChatHub> _hubContext;
-        private readonly QueueServiceClient _queueServiceClient;
+        public Task SendMessageToQueue(Message message);
+        public Task ReceiveMessageFromQueue(string connectionId, int secondToWait);
+        public Task TearDownResponseQueue(string connectionId);
+        public Task CreateResponseQueue(string connectionId);
+    }
 
-        public ChatHubService(ILogger<ChatHubService> logger, IHubContext<ChatHub> hubContext,
-            QueueServiceClient queueServiceClient)
+    public class ChatHubService : IChatHubService
+    {
+        private readonly ILogger<ChatHubService> _logger;
+        private readonly QueueServiceClient _queueServiceClient;
+        private readonly IHubContext<ChatHub> _hubContext;
+        public static string ChatInputQueueName => "chat-input";
+        public static string ChatOutputQueueName => "chat-output";
+
+        public ChatHubService(ILogger<ChatHubService> logger, IConfiguration configuration, IHubContext<ChatHub> hubContext)
         {
             _logger = logger;
             _hubContext = hubContext;
-            _queueServiceClient = queueServiceClient;
+            var connectionString = configuration.GetConnectionString("AzureStorage");
+            _queueServiceClient = new QueueServiceClient(connectionString);
         }
 
-        /// <inheritdoc />
-        public Task StartAsync(CancellationToken cancellationToken)
+        public Task CreateResponseQueue(string connectionId)
         {
-            _logger.LogInformation(":: ChatHubService is starting");
-            _timer = new Timer(MonitorMessages, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
-            return Task.CompletedTask;
-        }
-
-        private void MonitorMessages(object? state)
-        {
-            var client = _queueServiceClient.GetQueueClient("output");
-            Response<QueueMessage> message = client.ReceiveMessage();
-
-            if (message == null)
-                return;
-
-            var text = message?.Value?.MessageText;
-
-            if (!string.IsNullOrEmpty(text))
+            try
             {
-                var outMessage = JsonConvert.DeserializeObject<Message>(text);
-                _hubContext.Clients.All.SendAsync("SendMessage", outMessage);
-                client.DeleteMessage(message?.Value?.MessageId ?? "", message?.Value?.PopReceipt ?? "");
+                return Task.CompletedTask;
+            }
+            catch(Exception exception)
+            {
+                _logger.LogError(exception, $"Error creating queue {ChatOutputQueueName}");
+                return Task.CompletedTask;
+            }
+            
+        }
+
+        public Task TearDownResponseQueue(string connectionId)
+        {
+            try
+            {
+                return Task.CompletedTask;
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, $"Error deleting queue {ChatOutputQueueName}");
+                return Task.CompletedTask;
             }
         }
 
-        /// <inheritdoc />
-        public Task StopAsync(CancellationToken cancellationToken)
+        public async Task SendMessageToQueue(Message message)
         {
-            _timer?.Change(Timeout.Infinite, 0);
-            return Task.CompletedTask;
+            var client = _queueServiceClient.GetQueueClient(ChatInputQueueName);
+            await client.CreateIfNotExistsAsync();
+            message.ConnectionId = ChatOutputQueueName;
+            var json = JsonConvert.SerializeObject(message);
+            await client.SendMessageAsync(new BinaryData(json));
+        }
+
+        public async Task ReceiveMessageFromQueue(string connectionId, int secondToWait)
+        {
+            QueueClient client = _queueServiceClient.GetQueueClient(ChatOutputQueueName);
+            int maxTries = 1000;
+            while (maxTries != 0)
+            {
+                QueueMessage message = await client.ReceiveMessageAsync();
+                if (message != null || message?.MessageText != null)
+                {
+                    _logger.LogInformation(":: Received message from queue");
+                    var json = message.MessageText;
+                    var response = JsonConvert.DeserializeObject<Message>(json);
+                    await client.DeleteMessageAsync(message.MessageId, message.PopReceipt);
+                    await _hubContext.Clients.All.SendAsync("SendMessage", response);
+                    return;
+                }
+                await Task.Delay(1000 * 1);
+                maxTries--;
+            }
+            throw new SerializationException("Woops, I Fucked up");
+        }
+
+        public static string GetQueueCode(string connectionId)
+        {
+            EnsureThat.EnsureArg.IsNotEmptyOrWhiteSpace(connectionId, nameof(connectionId));
+            {
+                using MD5 md5 = MD5.Create();
+                byte[] hashBytes = md5.ComputeHash(Encoding.ASCII.GetBytes(connectionId));
+                return Convert.ToHexString(hashBytes).ToLower();
+            }
         }
     }
 }

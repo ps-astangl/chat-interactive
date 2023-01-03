@@ -1,0 +1,8 @@
+<ng-template [ngIf]="connectionState === 'Connected'">
+    <mat-icon color="primary">info</mat-icon>
+    Connected to server
+</ng-template>
+<ng-template [ngIf]="connectionState === 'Disconnected'">
+    <mat-icon color="warn">info</mat-icon>
+    Disconnected from server
+</ng-template>

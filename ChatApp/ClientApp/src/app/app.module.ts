@@ -7,23 +7,40 @@ import { TitleBarComponent } from './components/title-bar/title-bar.component';
 import {MatIconModule} from "@angular/material/icon";
 import {MatToolbarModule} from "@angular/material/toolbar";
 import {MatButtonModule} from "@angular/material/button";
-import {ChatCardComponent, MarkedPipe} from './components/chat-card/chat-card.component';
+import {ChatCardComponent} from './components/chat-card/chat-card.component';
 import {MatListModule} from "@angular/material/list";
 import {MatCardModule} from "@angular/material/card";
 import {MatInputModule} from "@angular/material/input";
-import {MatLineModule} from "@angular/material/core";
-import {FormsModule} from "@angular/forms";
+import {MatLineModule, MatOptionModule} from "@angular/material/core";
+import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
 import {HttpClientModule} from "@angular/common/http";
 import {ChatService} from "./services/chat-service.service";
-import {MarkdownModule} from "ngx-markdown";
+import { MarkedPipe } from './pipes/marked-pipe.pipe';
+import {MatButtonToggleModule} from "@angular/material/button-toggle";
+import {MatSelectModule} from "@angular/material/select";
+import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
+import {MatProgressBarModule} from "@angular/material/progress-bar";
+import {MatExpansionModule} from "@angular/material/expansion";
+import {ChatConversationCardComponent} from "./components/chat-converation-card/chat-conversation-card.component";
+import {MatTableModule} from "@angular/material/table";
+import {MatSidenavModule} from "@angular/material/sidenav";
+import { ConnectionIndicatorComponent } from './components/connection-indicator/connection-indicator.component';
+import {MatTreeModule} from "@angular/material/tree";
+import {CdkVirtualScrollViewport} from "@angular/cdk/scrolling";
+import {CdkAccordionModule} from "@angular/cdk/accordion";
+import {MatAutocompleteModule} from "@angular/material/autocomplete";
+import {MatSnackBarModule} from "@angular/material/snack-bar";
+
 
 @NgModule({
   declarations: [
     AppComponent,
     TitleBarComponent,
     ChatCardComponent,
-    MarkedPipe
+    MarkedPipe,
+      ChatConversationCardComponent,
+      ConnectionIndicatorComponent
   ],
     imports: [
         BrowserModule,
@@ -38,7 +55,20 @@ import {MarkdownModule} from "ngx-markdown";
         MatInputModule,
         MatLineModule,
         FormsModule,
-        MarkdownModule
+        MatButtonToggleModule,
+        MatOptionModule,
+        MatSelectModule,
+        MatProgressSpinnerModule,
+        MatProgressBarModule,
+        MatExpansionModule,
+        MatTableModule,
+        MatSidenavModule,
+        MatTreeModule,
+        CdkVirtualScrollViewport,
+        CdkAccordionModule,
+        MatAutocompleteModule,
+        ReactiveFormsModule,
+        MatSnackBarModule
     ],
   providers: [ChatService],
   bootstrap: [AppComponent]

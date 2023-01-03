@@ -11,7 +11,7 @@ builder.Services.AddQueueClient(builder.Configuration);
 
 builder.Services.AddSignalR(x => builder.Configuration.GetSection("UploadStatusHubOptions").Bind(x));
 
-builder.Services.AddHostedService<ChatHubService>();
+builder.Services.AddScoped<IChatHubService, ChatHubService>();
 
 builder.Services
     .AddMvc(opt => opt.EnableEndpointRouting = false);
@@ -20,7 +20,8 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy
+            .AllowAnyOrigin()
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -51,15 +52,11 @@ app.UseCors("AllowAll");
 
 app.UseAuthorization();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseDeveloperExceptionPage();
-}
-else
-{
-    app.UseExceptionHandler("/Error");
-    app.UseHsts();
-}
+
+app.UseDeveloperExceptionPage();
+
+app.UseHsts();
+
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
@@ -84,7 +81,7 @@ app.UseSpa(spa =>
     }
     else
     {
-        spa.Options.SourcePath = "wwwroot";
+        spa.Options.SourcePath = "wwwroot/dist";
     }
 });
 

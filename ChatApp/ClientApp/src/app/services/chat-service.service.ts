@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core';
 import * as signalR from '@microsoft/signalr'; // import signalR
 
-import {Subject} from 'rxjs';
+import {delay, Subject} from 'rxjs';
 import {Message} from "../interfaces/message";
 
 
@@ -11,31 +11,63 @@ import {Message} from "../interfaces/message";
 export class ChatService {
     private message$: Subject<Message>;
     public connection: signalR.HubConnection;
+    public connectionId: string;
+
     constructor() {
         this.message$ = new Subject<Message>();
         this.connection = new signalR.HubConnectionBuilder()
             .withUrl('/hub')
             .build();
-        this.connect();
     }
 
-    public connect(): void {
+    public connect(): Promise<void> {
         if (this.connection.state === signalR.HubConnectionState.Disconnected) {
-            this.connection.start()
-                .catch(err => console.log(err));
+            return this.connection.start()
+                .then(() => {
+                    this.connectionId = this.connection.connectionId
+                })
+                .catch(err => console.log(err))
+                .finally(() => {
+                    this.connectionId = this.connection.connectionId
+                });
         }
-    }
-    public disconnect(): void {
-        this.connection.stop();
+        return Promise.resolve();
     }
 
-    public getMessage(next) {
+    public disconnect(): Promise<void> {
+        this.connectionId = null;
+        return this.connection
+            .stop()
+            .then(() => {
+                this.connectionId = null;
+            })
+            .catch(err => console.log(err))
+            .finally(() => {
+                this.connectionId = null;
+            });
+    }
+
+    public getMessage(next): void {
         this.connection.on('SendMessage', (message: Message) => {
             next(message);
         });
     }
 
-    public getConnection(): signalR.HubConnection  {
+    public checkForMessage(next): void {
+        this.connection.on('CheckQueue', (message: Message) => {
+            next(message);
+        });
+    }
+
+    public getCurrentConnectionId(): string | null {
+        return this.connectionId;
+    }
+
+    public getConnection(): signalR.HubConnection {
         return this.connection;
+    }
+
+    public getConnectionState(): signalR.HubConnectionState {
+        return this.connection.state;
     }
 }

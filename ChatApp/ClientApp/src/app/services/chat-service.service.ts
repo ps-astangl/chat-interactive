@@ -52,13 +52,6 @@ export class ChatService {
             next(message);
         });
     }
-
-    public checkForMessage(next): void {
-        this.connection.on('CheckQueue', (message: Message) => {
-            next(message);
-        });
-    }
-
     public getCurrentConnectionId(): string | null {
         return this.connectionId;
     }

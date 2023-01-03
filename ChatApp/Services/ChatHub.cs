@@ -1,7 +1,4 @@
-﻿using System.Runtime.Serialization;
-using ChatApp.Controllers;
-using ChatApp.Models;
-using Microsoft.AspNetCore.Mvc;
+﻿using ChatApp.Models;
 using Microsoft.AspNetCore.SignalR;
 
 namespace ChatApp.Services
@@ -12,7 +9,6 @@ namespace ChatApp.Services
         Task SendMessage(Message message);
         Task Connect(Message message);
         Task Disconnect(Message message);
-        Task CheckQueue(Message message);
     }
 
     public class ChatHub : Hub<IChatHub>
@@ -27,31 +23,26 @@ namespace ChatApp.Services
             _chatHubService = chatHubService;
         }
 
+        /// <summary>
+        /// Invoked by the client to send a message to the server. Or by the server to push a message to the client.
+        /// </summary>
+        /// <param name="message"></param>
         public async Task SendMessage(Message message)
         {
-            _logger.LogInformation($":: Sending message to client {message.ConnectionId}");
+            _logger.LogInformation(":: Sending message to client {ClientId}", message.ConnectionId);
             await Clients.All.SendMessage(message);
         }
 
-        public async Task CheckQueue(Message message)
-        {
-            _logger.LogInformation(":: Checking Queue For Response...");
-            try
-            {
-                await _chatHubService.ReceiveMessageFromQueue(message.ConnectionId, 6 * 3);
-            }
-            catch (SerializationException serializationException)
-            {
-                _logger.LogError(":: SerializationException: " + serializationException.Message);
-                message.Text = "Sorry, I am not able to understand your question. Please try again.";
-                await Clients.All.SendMessage(message);
-            }
-        }
-
+        /// <summary>
+        /// Invoked by the client to send a message to the server.
+        /// The server will then broadcast the message to all connected clients.
+        /// </summary>
+        /// <param name="message"></param>
         public async Task ReceiveMessage(Message message)
         {
             _logger.LogInformation(":: Received message from client");
 
+            // Send message to all clients
             Message queueMessage = new Message
             {
                 Sender = message.Sender,
@@ -61,37 +52,36 @@ namespace ChatApp.Services
                 ConnectionId = ChatHubService.ChatOutputQueueName,
                 IsBot = message.IsBot
             };
+
             if (!queueMessage.IsBot)
             {
+                // Send message to all connected clients (multiple users)
                 await Clients.All.SendMessage(message);
+                // If we use this then the message will be sent to the client that sent it, not to all connected clients
                 // await Clients.Client(message.ConnectionId).SendMessage(message);
                 return;
             }
-
-            // Send to queue
             await _chatHubService.SendMessageToQueue(queueMessage);
-
-            // get message from queue and send to caller
-            _logger.LogInformation(":: Waiting For 1 Minute");
-
-            try
-            {
-                await _chatHubService.ReceiveMessageFromQueue(message.ConnectionId, 6 * 3);
-            }
-            catch (SerializationException serializationException)
-            {
-                _logger.LogError(":: SerializationException: " + serializationException.Message);
-                queueMessage.Text = "Sorry, I am not able to understand your question. Please try again.";
-                await Clients.All.SendMessage(queueMessage);
-            }
         }
 
+        /// <summary>
+        /// Invoked by the client on a method named "Connect" when the client is connected to the server.
+        /// This method will broadcast a message to all connected clients.
+        /// (Dictated by the front-end to state the user has entered)
+        /// </summary>
+        /// <param name="message"></param>
         public async Task Connect(Message message)
         {
             _logger.LogInformation(":: Connect From Client {Id}", message.ConnectionId);
             await Clients.All.SendMessage(message);
         }
 
+        /// <summary>
+        /// Invoked by the client on a method named "Disconnect" when the client is disconnected from the server.
+        /// This method will broadcast a message to all connected clients to state the user has left.
+        /// </summary>
+        /// <remarks>This is simply for sending predefined messages</remarks>
+        /// <param name="message"></param>
         public async Task Disconnect(Message message)
         {
             _logger.LogInformation(":: Disconnect From Client {Id}", message.ConnectionId);

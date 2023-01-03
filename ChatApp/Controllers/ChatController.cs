@@ -24,7 +24,7 @@ public class ChatController : ControllerBase
         try
         {
             Response<QueueClient>? createResponse = _queueServiceClient.CreateQueue("test");
-        
+
             if (createResponse.GetRawResponse().IsError)
                 return Ok(createResponse.GetRawResponse());
 
@@ -40,6 +40,5 @@ public class ChatController : ControllerBase
             _logger.LogError(e, "Error");
             return Ok(new {error = e});
         }
-
     }
 }

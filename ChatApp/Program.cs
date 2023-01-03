@@ -12,7 +12,7 @@ builder.Services.AddQueueClient(builder.Configuration);
 builder.Services.AddSignalR(x => builder.Configuration.GetSection("UploadStatusHubOptions").Bind(x));
 
 builder.Services.AddScoped<IChatHubService, ChatHubService>();
-
+builder.Services.AddHostedService<ChatHostedService>();
 builder.Services
     .AddMvc(opt => opt.EnableEndpointRouting = false);
 
@@ -30,16 +30,11 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers()
     .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
-builder.Services.AddRazorPages();
-
 if (builder.Environment.IsDevelopment())
-{
     builder.Services.AddSpaStaticFiles(configuration => { configuration.RootPath = "ClientApp"; });
-}
 else
-{
     builder.Services.AddSpaStaticFiles(configuration => { configuration.RootPath = "ClientApp/dist"; });
-}
+
 
 builder.Services.AddSession();
 
@@ -66,9 +61,7 @@ app.UseMvc();
 
 app.UseEndpoints(endpoints =>
 {
-    endpoints.MapControllerRoute(
-        name: "default",
-        pattern: "{controller}/{action=Index}/{id?}");
+    endpoints.MapControllerRoute("default", pattern: "{controller}/{action=Index}/{id?}");
     endpoints.MapHub<ChatHub>("/hub");
 });
 

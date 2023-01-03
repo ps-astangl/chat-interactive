@@ -1,10 +1,8 @@
-import {Component, EventEmitter, Output} from '@angular/core';
-import {MatSelectChange} from "@angular/material/select";
-import {BotConfiguration} from "../../interfaces/bot-configuration";
+import {Component} from '@angular/core';
 
 @Component({
-  selector: 'title-bar',
-  templateUrl: './title-bar.component.html'
+    selector: 'title-bar',
+    templateUrl: './title-bar.component.html'
 })
 export class TitleBarComponent {
 }

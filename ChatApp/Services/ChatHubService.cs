@@ -1,9 +1,5 @@
-﻿using System.Security.Cryptography;
-using System.Text;
-using Azure;
-using Azure.Storage.Queues;
+﻿using Azure.Storage.Queues;
 using Azure.Storage.Queues.Models;
-using ChatApp.Controllers;
 using ChatApp.Models;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
@@ -13,7 +9,7 @@ namespace ChatApp.Services
     public interface IChatHubService
     {
         public Task SendMessageToQueue(Message message);
-        public Task ReceiveMessageFromQueue();
+        // public Task ReceiveMessageFromQueue();
     }
 
     public class ChatHubService : IChatHubService
@@ -24,12 +20,11 @@ namespace ChatApp.Services
         public static string ChatInputQueueName => "chat-input";
         public static string ChatOutputQueueName => "chat-output";
 
-        public ChatHubService(ILogger<ChatHubService> logger, IConfiguration configuration, IHubContext<ChatHub> hubContext)
+        public ChatHubService(ILogger<ChatHubService> logger, IHubContext<ChatHub> hubContext, QueueServiceClient queueServiceClient)
         {
             _logger = logger;
             _hubContext = hubContext;
-            var connectionString = configuration.GetConnectionString("AzureStorage");
-            _queueServiceClient = new QueueServiceClient(connectionString);
+            _queueServiceClient = queueServiceClient;
         }
 
         public async Task SendMessageToQueue(Message message)
@@ -41,29 +36,29 @@ namespace ChatApp.Services
             await client.SendMessageAsync(new BinaryData(json));
         }
 
-        public async Task ReceiveMessageFromQueue()
-        {
-            QueueClient client = _queueServiceClient.GetQueueClient(ChatOutputQueueName);
-            int maxTries = 1000;
-            int timePerTry = 1000;
-
-            while (maxTries != 0)
-            {
-                QueueMessage message = await client.ReceiveMessageAsync();
-
-                if (message != null || message?.MessageText != null)
-                {
-                    _logger.LogInformation(":: Received message from queue");
-                    var json = message.MessageText;
-                    var response = JsonConvert.DeserializeObject<Message>(json);
-                    await client.DeleteMessageAsync(message.MessageId, message.PopReceipt);
-                    await _hubContext.Clients.All.SendAsync("SendMessage", response);
-                    return;
-                }
-                await Task.Delay(timePerTry);
-                maxTries--;
-            }
-            throw new ChatHubServiceException($"Timeout waiting for response from queue: Waiting {1000 * 1000} seconds");
-        }
+        // public async Task ReceiveMessageFromQueue()
+        // {
+        //     QueueClient client = _queueServiceClient.GetQueueClient(ChatOutputQueueName);
+        //     int maxTries = 1000;
+        //     int timePerTry = 1000;
+        //
+        //     while (maxTries != 0)
+        //     {
+        //         QueueMessage message = await client.ReceiveMessageAsync();
+        //
+        //         if (message != null || message?.MessageText != null)
+        //         {
+        //             _logger.LogInformation(":: Received message from queue");
+        //             var json = message.MessageText;
+        //             var response = JsonConvert.DeserializeObject<Message>(json);
+        //             await client.DeleteMessageAsync(message.MessageId, message.PopReceipt);
+        //             await _hubContext.Clients.All.SendAsync("SendMessage", response);
+        //             return;
+        //         }
+        //         await Task.Delay(timePerTry);
+        //         maxTries--;
+        //     }
+        //     throw new ChatHubServiceException($"Timeout waiting for response from queue: Waiting {1000 * 1000} seconds");
+        // }
     }
 }

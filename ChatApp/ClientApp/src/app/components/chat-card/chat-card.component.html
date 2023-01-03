@@ -1,6 +1,6 @@
 <script src="chat-card.component.ts"></script>
 <app-connection-indicator [connectionState]="this.connectionState"></app-connection-indicator>
-<!--TODO OPTIONS COMPONENT-->
+
 <mat-accordion>
     <mat-expansion-panel [(expanded)]="panelOpenState" hideToggle="true">
         <mat-expansion-panel-header>
@@ -75,7 +75,7 @@
                         <ng-template [ngIf]="!this.message.isThinking">
                             <mat-panel-title style="padding: 1px">
                                 <mat-icon>chat</mat-icon>
-                                {{message.sender}}:<div [innerHTML]="message.text.substring(0, 30) | marked"></div>
+                                {{message.sender}}:<div [innerHTML]="message.text.substring(0, 15) + '...'"></div>
                             </mat-panel-title>
                         </ng-template>
                     </mat-expansion-panel-header>
@@ -88,7 +88,7 @@
     <mat-form-field *ngIf="connectionState === 'Connected'">
 <textarea matInput [(ngModel)]="this.messageInput" placeholder="Type your message here (and hit enter to send)"
           (keydown.enter)="send()"></textarea>
-        <button matButton matSuffix mat-stroked-button (click)="send()" style="border: none; justify-self: left">
+        <button matSuffix mat-stroked-button (click)="send()" style="border: none; justify-self: left;">
             <mat-icon>send</mat-icon>
         </button>
     </mat-form-field>

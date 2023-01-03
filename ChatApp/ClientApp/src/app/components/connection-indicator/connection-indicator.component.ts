@@ -1,13 +1,13 @@
 import {AfterViewChecked, Component, Input, OnDestroy, OnInit} from '@angular/core';
 
 @Component({
-  selector: 'app-connection-indicator',
-  templateUrl: './connection-indicator.component.html'
+    selector: 'app-connection-indicator',
+    templateUrl: './connection-indicator.component.html'
 })
 export class ConnectionIndicatorComponent {
 
-  constructor() {
-  }
+    constructor() {
+    }
 
-  @Input() connectionState: string;
+    @Input() connectionState: string;
 }

@@ -1,5 +1,4 @@
-﻿using System.Runtime.Serialization;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 using Azure;
 using Azure.Storage.Queues;
@@ -14,9 +13,7 @@ namespace ChatApp.Services
     public interface IChatHubService
     {
         public Task SendMessageToQueue(Message message);
-        public Task ReceiveMessageFromQueue(string connectionId, int secondToWait);
-        public Task TearDownResponseQueue(string connectionId);
-        public Task CreateResponseQueue(string connectionId);
+        public Task ReceiveMessageFromQueue();
     }
 
     public class ChatHubService : IChatHubService
@@ -35,33 +32,6 @@ namespace ChatApp.Services
             _queueServiceClient = new QueueServiceClient(connectionString);
         }
 
-        public Task CreateResponseQueue(string connectionId)
-        {
-            try
-            {
-                return Task.CompletedTask;
-            }
-            catch(Exception exception)
-            {
-                _logger.LogError(exception, $"Error creating queue {ChatOutputQueueName}");
-                return Task.CompletedTask;
-            }
-            
-        }
-
-        public Task TearDownResponseQueue(string connectionId)
-        {
-            try
-            {
-                return Task.CompletedTask;
-            }
-            catch (Exception exception)
-            {
-                _logger.LogError(exception, $"Error deleting queue {ChatOutputQueueName}");
-                return Task.CompletedTask;
-            }
-        }
-
         public async Task SendMessageToQueue(Message message)
         {
             var client = _queueServiceClient.GetQueueClient(ChatInputQueueName);
@@ -71,13 +41,16 @@ namespace ChatApp.Services
             await client.SendMessageAsync(new BinaryData(json));
         }
 
-        public async Task ReceiveMessageFromQueue(string connectionId, int secondToWait)
+        public async Task ReceiveMessageFromQueue()
         {
             QueueClient client = _queueServiceClient.GetQueueClient(ChatOutputQueueName);
             int maxTries = 1000;
+            int timePerTry = 1000;
+
             while (maxTries != 0)
             {
                 QueueMessage message = await client.ReceiveMessageAsync();
+
                 if (message != null || message?.MessageText != null)
                 {
                     _logger.LogInformation(":: Received message from queue");
@@ -87,20 +60,10 @@ namespace ChatApp.Services
                     await _hubContext.Clients.All.SendAsync("SendMessage", response);
                     return;
                 }
-                await Task.Delay(1000 * 1);
+                await Task.Delay(timePerTry);
                 maxTries--;
             }
-            throw new SerializationException("Woops, I Fucked up");
-        }
-
-        public static string GetQueueCode(string connectionId)
-        {
-            EnsureThat.EnsureArg.IsNotEmptyOrWhiteSpace(connectionId, nameof(connectionId));
-            {
-                using MD5 md5 = MD5.Create();
-                byte[] hashBytes = md5.ComputeHash(Encoding.ASCII.GetBytes(connectionId));
-                return Convert.ToHexString(hashBytes).ToLower();
-            }
+            throw new ChatHubServiceException($"Timeout waiting for response from queue: Waiting {1000 * 1000} seconds");
         }
     }
 }

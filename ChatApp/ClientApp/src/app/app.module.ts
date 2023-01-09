@@ -39,20 +39,22 @@ import {collectionReducer} from "./state/reducers/collection.reducer"
 import {SafePipe} from "./pipes/safe-pipe";
 import {MatMenuModule} from "@angular/material/menu";
 import {MatTooltipModule} from "@angular/material/tooltip";
+import {AboutComponent} from './components/about/about.component';
 
 
 @NgModule({
-  declarations: [
-    AppComponent,
-    TitleBarComponent,
-    ChatCardComponent,
-    MarkedPipe,
-      SafePipe,
-      ChatConversationCardComponent,
-      ConnectionIndicatorComponent,
-      NotFoundComponent,
-      LoginComponent
-  ],
+    declarations: [
+        AppComponent,
+        TitleBarComponent,
+        ChatCardComponent,
+        MarkedPipe,
+        SafePipe,
+        ChatConversationCardComponent,
+        ConnectionIndicatorComponent,
+        NotFoundComponent,
+        LoginComponent,
+        AboutComponent
+    ],
     imports: [
         BrowserModule,
         HttpClientModule,
@@ -84,7 +86,8 @@ import {MatTooltipModule} from "@angular/material/tooltip";
         MatMenuModule,
         MatTooltipModule
     ],
-  providers: [ChatService],
-  bootstrap: [AppComponent]
+    providers: [ChatService],
+    bootstrap: [AppComponent]
 })
-export class AppModule { }
+export class AppModule {
+}

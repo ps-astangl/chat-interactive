@@ -4,12 +4,14 @@ import {ChatCardComponent} from "./components/chat-card/chat-card.component";
 import {NotFoundComponent} from "./components/not-found/not-found.component";
 import {AuthGuardService} from "./services/auth-guard.service";
 import {LoginComponent} from "./components/login/login.component";
+import {AboutComponent} from "./components/about/about.component";
 
 
 const routes: Routes = [
   {path: '', component: ChatCardComponent, canActivate: [AuthGuardService]},
+  {path: 'about', component: AboutComponent},
   {path: 'login', component: LoginComponent},
-  {path: '**', component: NotFoundComponent}
+  {path: '**', component: NotFoundComponent},
 ];
 
 @NgModule({

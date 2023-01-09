@@ -17,9 +17,16 @@ export class AuthGuardService implements CanActivate {
     }
 
     canActivate(): boolean {
+        let user = sessionStorage.getItem('username');
+        let channel = sessionStorage.getItem('channel');
+        if (user && channel) {
+            return true;
+        }
         this.store.select(selectLoginState).pipe().subscribe((value) => {
             if (value.length > 0) {
                 let lastValue = value[0];
+                sessionStorage.setItem("username", lastValue.username);
+                sessionStorage.setItem("channel",  lastValue.channel);
                 this.loginRequest.username = lastValue.username;
                 this.loginRequest.channel =  lastValue.channel;
                 this.isAuthenticated = true;

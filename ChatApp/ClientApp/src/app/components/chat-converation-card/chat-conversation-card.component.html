@@ -1,6 +1,6 @@
-<mat-card class="example-card">
+<mat-card class="conversation-card" [hidden]="deleteMessage">
     <mat-card-header>
-        <img mat-card-sm-image [src]=avatar class="avatar">
+        <img mat-card-sm-image [src]=avatar class="avatar" [alt]="message.sender">
         <mat-divider vertical="true"></mat-divider>
         <mat-card-title-group class="example-spacer">
             <mat-card-subtitle>{{message.sender}}</mat-card-subtitle>
@@ -8,17 +8,38 @@
             <mat-card-subtitle>Id: {{message.commentId}}</mat-card-subtitle>
             <mat-card-subtitle>Time: {{now | date:'HH:mm'}}</mat-card-subtitle>
         </mat-card-title-group>
+        <mat-card-actions>
+            <mat-button-toggle (click)="deleteMessage()" style="margin: 3px 4px 4px -4px; padding: 8px; scale: 50%; border: none">
+                <mat-icon fill="full" color="warn" (click)="deleteMessage()">delete</mat-icon>
+            </mat-button-toggle>
+        </mat-card-actions>
     </mat-card-header>
     <mat-card-content *ngIf=isThinking>
-        {{this.message.sender + " is typing..."}}
+        {{message.sender + " is typing..."}}
         <mat-progress-bar mode="indeterminate"></mat-progress-bar>
     </mat-card-content>
     <mat-card-content *ngIf="!isThinking">
-        <div [innerHTML]="message.text | marked"></div>
+        <div *ngIf="!isImage" [innerHTML]="message.text | marked"></div>
+        <picture *ngIf="isImage">
+            <img mat-card-image [src]="message.text | safe: 'url'" [alt]="message.prompt"
+                 style="width:100%; height: 100%;object-fit: cover;">
+        </picture>
+        <div style="position: relative;">
+        <mat-button-toggle (click)="upVote()" style="margin: 3px 4px 4px -4px; padding: 8px; scale: 50%; border: none">
+                <mat-icon color="primary" fill="full">thumb_up</mat-icon>
+            </mat-button-toggle>
+            <mat-label>{{this.votes}}</mat-label>
+            <mat-button-toggle (click)=downVote() style="padding: 8px; scale: 50%; border: none">
+                <mat-icon color="primary" fill="full">thumb_down</mat-icon>
+            </mat-button-toggle>
+            <mat-button-toggle>
+                <mat-icon color="primary" style="margin: 3px 4px 4px -4px; padding: 8px; scale: 50%; border: none" matTooltip="Check For Reply Again" (click)="setPollingTimeoutRefresh()">refresh</mat-icon>
+            </mat-button-toggle>
+        </div>
     </mat-card-content>
 </mat-card>
 <style>
-    .example-card {
+    .conversation-card {
         max-width: 600px;
         margin-bottom: 8px;
     }

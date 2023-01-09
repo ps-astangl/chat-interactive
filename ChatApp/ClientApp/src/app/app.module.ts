@@ -1,9 +1,9 @@
-import { NgModule } from '@angular/core';
-import { BrowserModule } from '@angular/platform-browser';
+import {NgModule} from '@angular/core';
+import {BrowserModule} from '@angular/platform-browser';
 
-import { AppRoutingModule } from './app-routing.module';
-import { AppComponent } from './app.component';
-import { TitleBarComponent } from './components/title-bar/title-bar.component';
+import {AppRoutingModule} from './app-routing.module';
+import {AppComponent} from './app.component';
+import {TitleBarComponent} from './components/title-bar/title-bar.component';
 import {MatIconModule} from "@angular/material/icon";
 import {MatToolbarModule} from "@angular/material/toolbar";
 import {MatButtonModule} from "@angular/material/button";
@@ -16,7 +16,7 @@ import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
 import {HttpClientModule} from "@angular/common/http";
 import {ChatService} from "./services/chat-service.service";
-import { MarkedPipe } from './pipes/marked-pipe.pipe';
+import {MarkedPipe} from './pipes/marked-pipe.pipe';
 import {MatButtonToggleModule} from "@angular/material/button-toggle";
 import {MatSelectModule} from "@angular/material/select";
 import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
@@ -25,12 +25,20 @@ import {MatExpansionModule} from "@angular/material/expansion";
 import {ChatConversationCardComponent} from "./components/chat-converation-card/chat-conversation-card.component";
 import {MatTableModule} from "@angular/material/table";
 import {MatSidenavModule} from "@angular/material/sidenav";
-import { ConnectionIndicatorComponent } from './components/connection-indicator/connection-indicator.component';
+import {ConnectionIndicatorComponent} from './components/connection-indicator/connection-indicator.component';
 import {MatTreeModule} from "@angular/material/tree";
 import {CdkVirtualScrollViewport} from "@angular/cdk/scrolling";
 import {CdkAccordionModule} from "@angular/cdk/accordion";
 import {MatAutocompleteModule} from "@angular/material/autocomplete";
 import {MatSnackBarModule} from "@angular/material/snack-bar";
+import {NotFoundComponent} from './components/not-found/not-found.component';
+import {LoginComponent} from './components/login/login.component';
+import {StoreModule} from '@ngrx/store';
+import {loginRequestReducer} from "./state/reducers/login.reducer";
+import {collectionReducer} from "./state/reducers/collection.reducer"
+import {SafePipe} from "./pipes/safe-pipe";
+import {MatMenuModule} from "@angular/material/menu";
+import {MatTooltipModule} from "@angular/material/tooltip";
 
 
 @NgModule({
@@ -39,8 +47,11 @@ import {MatSnackBarModule} from "@angular/material/snack-bar";
     TitleBarComponent,
     ChatCardComponent,
     MarkedPipe,
+      SafePipe,
       ChatConversationCardComponent,
-      ConnectionIndicatorComponent
+      ConnectionIndicatorComponent,
+      NotFoundComponent,
+      LoginComponent
   ],
     imports: [
         BrowserModule,
@@ -68,7 +79,10 @@ import {MatSnackBarModule} from "@angular/material/snack-bar";
         CdkAccordionModule,
         MatAutocompleteModule,
         ReactiveFormsModule,
-        MatSnackBarModule
+        MatSnackBarModule,
+        StoreModule.forRoot({login: loginRequestReducer, collection: collectionReducer}),
+        MatMenuModule,
+        MatTooltipModule
     ],
   providers: [ChatService],
   bootstrap: [AppComponent]

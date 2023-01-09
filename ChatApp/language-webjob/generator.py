@@ -1,5 +1,7 @@
+import hashlib
 import json
 import logging
+import random
 import sys
 import threading
 import time
@@ -10,17 +12,72 @@ from azure.core.paging import ItemPaged
 from azure.storage.queue import QueueMessage, QueueServiceClient, TextBase64EncodePolicy, QueueProperties
 from simpletransformers.language_generation import LanguageGenerationModel
 import os
+from typing import Optional
+import logging
+import torch
+import gc
+from diffusers import StableDiffusionPipeline
+from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
+
 
 MAT_PROC_SLEEP: int = 1
 
 logging.getLogger("azure.storage").setLevel(logging.WARNING)
+
+class BlobBroker(object):
+    logging.getLogger("azure.storage").setLevel(logging.WARNING)
+    def __init__(self, container_name, blob_name):
+        self.blob_service_client = BlobServiceClient.from_connection_string("DefaultEndpointsProtocol=https;AccountName=ajdevreddit;AccountKey=+9066TCgdeVignRdy50G4qjmNoUJuibl9ERiTGzdV4fwkvgdV3aSVqgLwldgZxj/UpKLkkfXg+3k+AStjFI33Q==;BlobEndpoint=https://ajdevreddit.blob.core.windows.net/;QueueEndpoint=https://ajdevreddit.queue.core.windows.net/;TableEndpoint=https://ajdevreddit.table.core.windows.net/;FileEndpoint=https://ajdevreddit.file.core.windows.net/;")
+        self.container_name = container_name
+        self.blob_name = blob_name
+
+    def download_blob(self):
+        return self.blob_service_client.get_blob_client(container=self.container_name, blob=self.blob_name).download_blob()
+
+    def upload_blob(self, data):
+        return self.blob_service_client.get_blob_client(container=self.container_name, blob=self.blob_name).upload_blob(data)
+
+
+class ImageGenerator(object):
+    import hashlib
+    def __init__(self):
+        pass
+
+    def create_image(self, prompt: str) -> Optional[str]:
+        try:
+            pipe: StableDiffusionPipeline = StableDiffusionPipeline.from_pretrained("/models/StableDiffusionPipeline",
+                                                                                    revision="fp16",
+                                                                                    torch_dtype=torch.float16,
+                                                                                    safety_checker=None)
+            pipe = pipe.to("cuda")
+
+            image = pipe(prompt, guidance_scale=random.randint(7, 12), num_inference_steps=100, height=512, width=768).images[0]
+
+            image_path = "/images/" + hashlib.md5(prompt.encode()).hexdigest() + ".png"
+
+            image.save(image_path)
+
+            return image_path
+
+        except Exception as e:
+            logging.info("Failed to generate image")
+            return None
+
+        finally:
+            logging.info("Image generated successfully!")
+            try:
+                torch.cuda.empty_cache()
+                gc.collect()
+            except Exception as e:
+                logging.info("Failed to empty cache")
+                gc.collect()
 
 
 class MessageBroker(object):
     logging.getLogger("azure.storage").setLevel(logging.WARNING)
 
     def __init__(self):
-        self.connection_string: str = os.Eniron["AzureWebJobsStorage"]
+        self.connection_string: str = "DefaultEndpointsProtocol=https;AccountName=ajdevreddit;AccountKey=+9066TCgdeVignRdy50G4qjmNoUJuibl9ERiTGzdV4fwkvgdV3aSVqgLwldgZxj/UpKLkkfXg+3k+AStjFI33Q==;BlobEndpoint=https://ajdevreddit.blob.core.windows.net/;QueueEndpoint=https://ajdevreddit.queue.core.windows.net/;TableEndpoint=https://ajdevreddit.table.core.windows.net/;FileEndpoint=https://ajdevreddit.file.core.windows.net/;"
         self.service: QueueServiceClient = QueueServiceClient.from_connection_string(self.connection_string,
                                                                                      encode_policy=TextBase64EncodePolicy())
 
@@ -79,12 +136,13 @@ class LangaugeGenerator(object):
         "CoopBot": f"D:\models\mega_pablo_bot",
         "PabloBot": f"D:\models\PabloBot",
         "Susan": f"D:\models\large_flightattentdent_bot",
+        "ImageBot": f"D:\models\StableDiffusionPipeline",
     }
 
     def __init__(self, bot_name: str):
         self.model_path = self.sender_map.get(bot_name)
 
-    def generate_response(self, input_prompt, message_topic) -> str:
+    def generate_response(self, input_prompt, message_topic, message_channel) -> str:
         text_model_generator = LanguageGenerationModel("gpt2", self.model_path, args={
             'max_length': 1024,
             'num_return_sequences': 1,
@@ -93,11 +151,15 @@ class LangaugeGenerator(object):
             'temperature': 0.8,
             'top_k': 40,
         }, use_cuda=True)
-
-        topic = message_topic
-        title = message_topic
-        body = message_topic
-        prompt = f"<|soss r/{topic}|><|sot|>{title}<|eot|>{body}<|sost|><|eost|><|sor u/Human|>{input_prompt}<|eor|><|sor|>"
+        # prompt = f"<|soss r/{message_channel}|><|sot|>{message_topic}<|eot|><|sost|>{message_topic}<|eost|><|sor u/Humans|>{input_prompt.strip()}<|eor|><|sor|>"
+        # prompt = f"<|soss r/{message_channel}|><|sot|>{message_topic}<|eot|><|sost|>{input_prompt}<|eost|><|sor|>"
+        # if random.randint(1,2) == 1:
+            # Assumes continuation
+        # prompt = f"<|soss r/{message_channel}|><|sot|>{message_topic}<|eot|><|sost|><|eost|><|sor u/Human|>{input_prompt}<|eost|><|sor|>"
+        prompt = f"<|soss r/{message_channel}|><|sot|>{message_topic}<|eot|><|sost|>{input_prompt}<|eost|><|sor|>"
+        # else:
+            # Assumes new
+        # prompt = f"<|soss r/{message_channel}|><|sot|>{message_topic}<|eot|><|sost|>{input_prompt}<|eost|><|sor|>"
 
         reply = None
         refresh_args = {
@@ -122,8 +184,7 @@ class LangaugeGenerator(object):
 class ProcessManager(threading.Thread):
     def __init__(self, proc_name: str):
         super().__init__(name=proc_name, daemon=True)
-        self.poll_for_message_worker_thread = threading.Thread(target=self.poll_for_reply_queue, args=(), daemon=True,
-                                                               name=proc_name)
+        self.poll_for_message_worker_thread = threading.Thread(target=self.poll_for_reply_queue, args=(), daemon=True,name=proc_name)
         self.message_broker_instance: MessageBroker = MessageBroker()
 
     @staticmethod
@@ -131,23 +192,48 @@ class ProcessManager(threading.Thread):
         message_broker_instance = MessageBroker()
         print(f"Got reply: {q}")
         data_dict = q
-        prompt = data_dict.get("Text")
+        text = data_dict.get("Text")
+        prompt = data_dict.get("Prompt")
         sender = data_dict.get("Sender")
         topic = data_dict.get("Topic")
+        channel = data_dict.get("Channel")
         comment_id = data_dict.get("CommentId")
         connection_id = data_dict.get("ConnectionId")
         out_queue = data_dict.get("ConnectionId")
         try:
             langauge_generator = LangaugeGenerator(sender)
-            reply = langauge_generator.generate_response(prompt, topic)
-            reply = reply.replace("<|eor|>", "")
-            reply = reply.replace("<|eoss|>", "")
+            if sender == "ImageBot":
+                foo = ImageGenerator().create_image(prompt)
+                if foo is not None:
+                    with open(foo, "rb") as f:
+                        image_data = f.read()
+                        BlobBroker(container_name='images', blob_name=foo).upload_blob(image_data)
+                        print("https://ajdevreddit.blob.core.windows.net/images" + foo)
+                        reply = "https://ajdevreddit.blob.core.windows.net/images" + foo
+            else:
+                reply = langauge_generator.generate_response(prompt, topic, channel)
+                reply = reply.replace("<|eor|>", "")
+                reply = reply.replace("<|eoss|>", "")
+            print(reply)
         except Exception as e:
             print(f"Error generating reply: {e}")
             reply = "I'm sorry, I'm not feeling well today. I'll be back later."
             pass
-        out_put = json.dumps({"text": reply, "sender": sender, "commentId": comment_id, "topic": topic, "connectionId": connection_id, "isBot": True})
+        out_put = json.dumps(
+            {
+                "text": reply,
+                "prompt": prompt,
+                "sender": sender,
+                "commentId": comment_id,
+                "topic": topic,
+                "connectionId": connection_id,
+                "isBot": True,
+                "isThinking": False,
+                "channel": channel
+            }
+        )
         try:
+            print(f"Sending reply: {out_put}")
             message_broker_instance.put_message(out_queue, out_put)
         except:
             print(f"Error putting message on queue: {out_queue}")

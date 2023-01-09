@@ -1,6 +1,14 @@
 <ng-template [ngIf]="connectionState === 'Connected'">
-    <mat-icon color="primary">info</mat-icon>
-    Connected to server
+        <mat-icon color="primary">info</mat-icon>
+        Connected to server
+        <mat-card-subtitle>
+            <mat-card-content class="example-spacer">
+                <span>User: {{this.user}}</span><br/>
+                <span>Chat Buddy: {{this.author}}</span><br/>
+                <span>Chat Room: {{this.channel}}</span><br/>
+                <span>Chat Topic: {{this.topic}}</span><br/>
+            </mat-card-content>
+        </mat-card-subtitle>
 </ng-template>
 <ng-template [ngIf]="connectionState === 'Disconnected'">
     <mat-icon color="warn">info</mat-icon>

@@ -52,6 +52,13 @@ export class ChatService {
             next(message);
         });
     }
+    
+    public getMessages(next): void {
+        this.connection.on('SendMessages',  (messages: Message[]) => {
+            next(messages);
+        });
+    }
+
     public getCurrentConnectionId(): string | null {
         return this.connectionId;
     }

@@ -1,6 +1,7 @@
 ﻿using Azure.Storage.Queues;
 using Azure.Storage.Queues.Models;
 using ChatApp.Models;
+using ChatApp.Repository;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 
@@ -9,56 +10,30 @@ namespace ChatApp.Services
     public interface IChatHubService
     {
         public Task SendMessageToQueue(Message message);
-        // public Task ReceiveMessageFromQueue();
     }
 
     public class ChatHubService : IChatHubService
     {
         private readonly ILogger<ChatHubService> _logger;
+
         private readonly QueueServiceClient _queueServiceClient;
-        private readonly IHubContext<ChatHub> _hubContext;
-        public static string ChatInputQueueName => "chat-input";
+        private static string ChatInputQueueName => "chat-input";
         public static string ChatOutputQueueName => "chat-output";
 
-        public ChatHubService(ILogger<ChatHubService> logger, IHubContext<ChatHub> hubContext, QueueServiceClient queueServiceClient)
+        public ChatHubService(ILogger<ChatHubService> logger, QueueServiceClient queueServiceClient)
         {
             _logger = logger;
-            _hubContext = hubContext;
             _queueServiceClient = queueServiceClient;
         }
 
         public async Task SendMessageToQueue(Message message)
         {
+            _logger.LogInformation(":: Sending Message To Queue");
             var client = _queueServiceClient.GetQueueClient(ChatInputQueueName);
             await client.CreateIfNotExistsAsync();
             message.ConnectionId = ChatOutputQueueName;
             var json = JsonConvert.SerializeObject(message);
             await client.SendMessageAsync(new BinaryData(json));
         }
-
-        // public async Task ReceiveMessageFromQueue()
-        // {
-        //     QueueClient client = _queueServiceClient.GetQueueClient(ChatOutputQueueName);
-        //     int maxTries = 1000;
-        //     int timePerTry = 1000;
-        //
-        //     while (maxTries != 0)
-        //     {
-        //         QueueMessage message = await client.ReceiveMessageAsync();
-        //
-        //         if (message != null || message?.MessageText != null)
-        //         {
-        //             _logger.LogInformation(":: Received message from queue");
-        //             var json = message.MessageText;
-        //             var response = JsonConvert.DeserializeObject<Message>(json);
-        //             await client.DeleteMessageAsync(message.MessageId, message.PopReceipt);
-        //             await _hubContext.Clients.All.SendAsync("SendMessage", response);
-        //             return;
-        //         }
-        //         await Task.Delay(timePerTry);
-        //         maxTries--;
-        //     }
-        //     throw new ChatHubServiceException($"Timeout waiting for response from queue: Waiting {1000 * 1000} seconds");
-        // }
     }
 }

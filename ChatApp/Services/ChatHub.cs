@@ -1,11 +1,14 @@
 ﻿using ChatApp.Models;
+using ChatApp.Repository;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace ChatApp.Services
 {
     public interface IChatHub
     {
         Task ReceiveMessage(Message message);
+        Task SendMessages(Message[] messages);
         Task SendMessage(Message message);
         Task Connect(Message message);
         Task Disconnect(Message message);
@@ -15,24 +18,15 @@ namespace ChatApp.Services
     {
         private readonly ILogger<ChatHub> _logger;
         private readonly IChatHubService _chatHubService;
+        private readonly ITableStorageRepository _tableStorageRepository;
 
         /// <inheritdoc />
-        public ChatHub(ILogger<ChatHub> logger, IChatHubService chatHubService)
+        public ChatHub(ILogger<ChatHub> logger, IChatHubService chatHubService, ITableStorageRepository tableStorageRepository)
         {
             _logger = logger;
             _chatHubService = chatHubService;
+            _tableStorageRepository = tableStorageRepository;
         }
-
-        /// <summary>
-        /// Invoked by the client to send a message to the server. Or by the server to push a message to the client.
-        /// </summary>
-        /// <param name="message"></param>
-        public async Task SendMessage(Message message)
-        {
-            _logger.LogInformation(":: Sending message to client {ClientId}", message.ConnectionId);
-            await Clients.All.SendMessage(message);
-        }
-
         /// <summary>
         /// Invoked by the client to send a message to the server.
         /// The server will then broadcast the message to all connected clients.
@@ -40,28 +34,15 @@ namespace ChatApp.Services
         /// <param name="message"></param>
         public async Task ReceiveMessage(Message message)
         {
-            _logger.LogInformation(":: Received message from client");
+            _logger.LogInformation(":: Received message from client for Person {Person} on Channel {Channel}", message.Sender, message.Channel);
 
-            // Send message to all clients
-            Message queueMessage = new Message
+            if (message.IsBot)
             {
-                Sender = message.Sender,
-                Text = message.Text,
-                Topic = message.Topic,
-                CommentId = message.CommentId,
-                ConnectionId = ChatHubService.ChatOutputQueueName,
-                IsBot = message.IsBot
-            };
-
-            if (!queueMessage.IsBot)
-            {
-                // Send message to all connected clients (multiple users)
-                await Clients.All.SendMessage(message);
-                // If we use this then the message will be sent to the client that sent it, not to all connected clients
-                // await Clients.Client(message.ConnectionId).SendMessage(message);
-                return;
+                message.ConnectionId = ChatHubService.ChatOutputQueueName;
+                await _chatHubService.SendMessageToQueue(message);
             }
-            await _chatHubService.SendMessageToQueue(queueMessage);
+            await _tableStorageRepository.AddMessageToChannel(message.ToStorageMessage());
+            await Clients.Group(message.Channel).SendMessage(message);
         }
 
         /// <summary>
@@ -73,7 +54,25 @@ namespace ChatApp.Services
         public async Task Connect(Message message)
         {
             _logger.LogInformation(":: Connect From Client {Id}", message.ConnectionId);
-            await Clients.All.SendMessage(message);
+            await Groups.AddToGroupAsync(message.ConnectionId, message.Channel);
+
+            var messages = _tableStorageRepository.GetMessagesForChannel(message.Channel);
+
+            async void Action(Message x)
+            {
+                await Clients.Client(message.ConnectionId).SendMessage(x);
+            }
+
+            messages.ForEach(Action);
+            
+            await Clients.Group(message.Channel).SendMessage(message);
+        }
+        
+        public async Task GetMessagesForChannel(string channel)
+        {
+            _logger.LogInformation(":: GetMessagesForChannel {Channel}", channel);
+            var messages = _tableStorageRepository.GetMessagesForChannel(channel);
+            await Clients.Group(channel).SendMessages(messages.ToArray());
         }
 
         /// <summary>
@@ -85,7 +84,8 @@ namespace ChatApp.Services
         public async Task Disconnect(Message message)
         {
             _logger.LogInformation(":: Disconnect From Client {Id}", message.ConnectionId);
-            await Clients.All.SendMessage(message);
+            await Groups.RemoveFromGroupAsync(message.ConnectionId, message.Channel);
+            await Clients.Group(message.Channel).SendMessage(message);
         }
     }
 }

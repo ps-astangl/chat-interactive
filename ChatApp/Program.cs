@@ -8,6 +8,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.BuildConfiguration(builder.Environment);
 
 builder.Services.AddQueueClient(builder.Configuration);
+builder.Services.AddTableClient(builder.Configuration);
+builder.Services.AddCache(builder.Configuration);
+
 
 builder.Services.AddSignalR(x => builder.Configuration.GetSection("UploadStatusHubOptions").Bind(x));
 

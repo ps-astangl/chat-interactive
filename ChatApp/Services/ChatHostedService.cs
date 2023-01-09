@@ -1,6 +1,7 @@
 using Azure.Storage.Queues;
 using Azure.Storage.Queues.Models;
 using ChatApp.Models;
+using ChatApp.Repository;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 
@@ -14,12 +15,14 @@ namespace ChatApp.Services
         private readonly ILogger<ChatHostedService> _logger;
         private readonly IHubContext<ChatHub> _hubContext;
         private readonly QueueServiceClient _queueServiceClient;
+        private readonly ITableStorageRepository _tableStorageRepository;
 
         /// <inheritdoc />
-        public ChatHostedService(ILogger<ChatHostedService> logger, IHubContext<ChatHub> hubContext, QueueServiceClient queueServiceClient)
+        public ChatHostedService(ILogger<ChatHostedService> logger, IHubContext<ChatHub> hubContext, QueueServiceClient queueServiceClient, ITableStorageRepository tableStorageRepository)
         {
             _hubContext = hubContext;
             _queueServiceClient = queueServiceClient;
+            _tableStorageRepository = tableStorageRepository;
             _logger = logger;
         }
 
@@ -32,12 +35,18 @@ namespace ChatApp.Services
 
                 if (message != null || message?.MessageText != null)
                 {
-                    _logger.LogInformation(":: Received message from queue");
                     var json = message.MessageText;
                     var response = JsonConvert.DeserializeObject<Message>(json);
+                    _logger.LogInformation(":: Received message from queue for {Bot} and Id {Id}", response.Sender, response.CommentId);
                     await queueClient.DeleteMessageAsync(message.MessageId, message.PopReceipt, stoppingToken);
-                    _logger.LogInformation(":: Sending Message To Client");
-                    await _hubContext.Clients.All.SendAsync("SendMessage", response, cancellationToken: stoppingToken);
+
+                    // Update
+                    await _tableStorageRepository.AddMessageToChannel(response.ToStorageMessage());
+                    
+                    _logger.LogInformation(JsonConvert.SerializeObject(response));
+
+                    _logger.LogInformation(":: Sending Message To Client on Channel: {response.Channel} for Id: {Id}", response.Channel, response.CommentId);
+                    await _hubContext.Clients.Group(response.Channel).SendAsync("SendMessage", response, cancellationToken: stoppingToken);
                 }
 
                 await Task.Delay(1000, stoppingToken);

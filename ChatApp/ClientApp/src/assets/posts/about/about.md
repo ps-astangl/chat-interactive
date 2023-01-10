@@ -2,28 +2,31 @@
 
 ## About
 
-The **_GPT2-Chat App_** is an application designed with the intent to provide an interface and hub for users to interact
-with various implementations of AI or with others in real time.
+The **_GPT2-Chat App_** is an application inspired by the my side
+project/hoppy: [r/CoopAndPabloPlayhouse](https://www.reddit.com/r/CoopAndPabloPlayhouse/). An entire subreddit occupied
+by bots, that talk amongst each-other constantly. The idea behind this application is to provide a similar user
+interface to
+communicate with these AI models in real time outside reddit. The design is such that it
+emulates
+some characteristics similar to those present in social media applications e.g. Facebook, Twitter, Reddit, etc.
 
-Users can provide themselves an _identity_ and create/join _chat rooms_. Each room can be joined by multiple users
-where they can chat with each other or with an AI. Unlike some other chat applications, the chat rooms are persistent
-and take the form of a _thread_. This is a purposeful design choice to allow users to have a more natural conversation
-with each other and with the AI. (The implementation of the UI at date is not ideal for this, but it is a work in
-progress)
+In terms of basic experience, a user can log in and create/join _chat rooms_. Each room can be joined by multiple users
+where they can chat with each other or with an AI. These rooms are persistent (history is preserved) and take the form
+of a _thread_. This is a purposeful design choice to allow users to have a more natural conversation
+with each other and with the AI consistent with how users would interact with aforementioned social media websites. 
 
-By default, a user will be able to chat with an AI in the _CoopAndPabloPlayHouse_ group (room). The default AI
-is `ImageBot` which can
-use [stable diffusion pipelines](https://huggingface.co/docs/diffusers/api/pipelines/stable_diffusion) to create an
+By default, a user will be able to chat with an AI in the _CoopAndPabloPlayHouse_ room. The default AI
+is `ImageBot` which can use [stable diffusion pipelines](https://huggingface.co/docs/diffusers/api/pipelines/stable_diffusion) to create an
 image based on the user's input.
 
 All other AI models
 are [Medium Or Large GPT-2 Models](https://huggingface.co/gpt2) [fine-tuned using simple transformers](https://simpletransformers.ai/)
-on a dataset of [Reddit comments](https://files.pushshift.io/reddit/comments/).
+on a data derived from the [PushShift API On Comments From Reddit](https://files.pushshift.io/reddit/comments/).
 
 ## How It Works
+
 TODO:
 Provide a high level description of how it all works. This needs a picture.
-
 
 ### Tech Stack
 
@@ -54,14 +57,17 @@ Technologies:
     - Azure Storage Queue/Blobs
 
 ### Back-End Architecture
+
 TODO:
 In depth description of the back-end architecture. This needs a picture.
 
 ### Front-End Architecture/Design
+
 TODO:
 In depth description of the front-end architecture. This needs a picture.
 
 ### AI Architecture/Design
+
 TODO:
 In depth description of the AI architecture. This needs a picture.
 
@@ -72,7 +78,7 @@ possible to deploy the python worker as a web job hosted in within the web app b
 
 **THIS WILL NOT SCALE**
 
-The python worker will quickly exhaust any compute power a typical app service is designed to do. 
+The python worker will quickly exhaust any compute power a typical app service is designed to do.
 App services **are not meant** to produce high levels of compute. And AI models are compute intensive and...
 
 **GPU IN THE CLOUD IS NOT CHEAP**

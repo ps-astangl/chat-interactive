@@ -8,7 +8,7 @@ logging.getLogger("azure.storage").setLevel(logging.WARNING)
 
 class MessageBroker(object):
     def __init__(self):
-        self.connection_string: str = "DefaultEndpointsProtocol=https;AccountName=ajdevreddit;AccountKey=+9066TCgdeVignRdy50G4qjmNoUJuibl9ERiTGzdV4fwkvgdV3aSVqgLwldgZxj/UpKLkkfXg+3k+AStjFI33Q==;BlobEndpoint=https://ajdevreddit.blob.core.windows.net/;QueueEndpoint=https://ajdevreddit.queue.core.windows.net/;TableEndpoint=https://ajdevreddit.table.core.windows.net/;FileEndpoint=https://ajdevreddit.file.core.windows.net/;"
+        self.connection_string: str = ""
         self.service: QueueServiceClient = QueueServiceClient.from_connection_string(self.connection_string,
                                                                                      encode_policy=TextBase64EncodePolicy())
 
